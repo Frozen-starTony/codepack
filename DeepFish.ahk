@@ -1,4 +1,4 @@
-﻿;====================================================================================================;
+;====================================================================================================;
 ;
 ;   DeepFish ALPHA
 ;   Copyright (c) 2026 Yato. All rights reserved.
@@ -221,6 +221,8 @@ BelOK := [false,false]
 DutyAvg := 0.5
 DarkAcc := 0
 settimer, HotkeyWatch, 500
+gosub, InitFrozenHeadHud
+settimer, UpdateFrozenHeadHud, 40
 
 Hotkey, % "$" . StartStopKey, HotkeyToggle, Off
 Hotkey, % "$" . ReloadKey, HotkeyReload, Off
@@ -7513,9 +7515,11 @@ Gui, Margin, 0, 0
 ;---- Top bar ----
 
 Gui, Font, s12 Bold c%ColorText%, Segoe UI
-Gui, Add, Text, x14 y10 w300 h26, ❄️ DeepFish [Frozen Edition]
+if FileExist(A_ScriptDir . "\gui_avatar.bmp")
+	Gui, Add, Picture, x14 y8 w48 h48, % A_ScriptDir . "\gui_avatar.bmp"
+Gui, Add, Text, x70 y10 w300 h26, ❄️ DeepFish [Frozen Edition]
 Gui, Font, s9 Norm c%ColorMuted%, Segoe UI
-Gui, Add, Text, x14 y36 w300 h16 HwndhSubtitle, Version 1.4 • Created by Frozen
+Gui, Add, Text, x70 y36 w300 h16 HwndhSubtitle, Version 1.4 • Created by Frozen
 SpecialBrushes[hSubtitle] := {brush: hBrushBG, text: 0xFFFFFF}
 
 StartStopLabel := MacroRunning ? "⏹ Stop" : "▶ Start"
@@ -9806,3 +9810,100 @@ GuiEscape:
 Gui, Hide
 gosub, ArmHotkeys
 return
+
+;====================================================================================================;
+; FROZEN BETA HEAD HUD & RAINBOW TEXT OVERLAY
+;====================================================================================================;
+
+InitFrozenHeadHud:
+FrozenRainbowHue := 0
+FrozenHeadBmp := A_ScriptDir . "\frozen_head.bmp"
+
+; Create transparent click-through topmost overlay window
+Gui, FrozenHud:New, -Caption +AlwaysOnTop +ToolWindow +E0x20 +HwndhFrozenHud
+Gui, FrozenHud:Color, FF00FF
+WinSet, TransColor, FF00FF 255, ahk_id %hFrozenHud%
+Gui, FrozenHud:Margin, 0, 0
+
+if FileExist(FrozenHeadBmp)
+	Gui, FrozenHud:Add, Picture, x46 y0 w48 h48 vFrozenHeadPic, %FrozenHeadBmp%
+
+Gui, FrozenHud:Font, s9 Bold, Segoe UI
+Gui, FrozenHud:Add, Text, x0 y50 w140 h20 Center vFrozenRainbowText, FROZEN BETA
+Gui, FrozenHud:Show, NoActivate Hide x0 y0 w140 h72
+return
+
+UpdateFrozenHeadHud:
+WinGet, rHwnd, ID, ahk_exe RobloxPlayerBeta.exe
+if (!rHwnd)
+{
+	SetTitleMatchMode, 3
+	WinGet, rHwnd, ID, Roblox
+	SetTitleMatchMode, 2
+}
+
+if (!rHwnd || !WinActive("ahk_id " . rHwnd))
+{
+	if (FrozenHudVisible)
+	{
+		Gui, FrozenHud:Hide
+		FrozenHudVisible := false
+	}
+	return
+}
+
+; Get Roblox Client Rect
+VarSetCapacity(rcRoblox, 16, 0)
+DllCall("GetClientRect", "Ptr", rHwnd, "Ptr", &rcRoblox)
+DllCall("ClientToScreen", "Ptr", rHwnd, "Ptr", &rcRoblox)
+rX := NumGet(rcRoblox, 0, "Int")
+rY := NumGet(rcRoblox, 4, "Int")
+rW := NumGet(rcRoblox, 8, "Int")
+rH := NumGet(rcRoblox, 12, "Int")
+
+if (rW < 200 || rH < 200)
+	return
+
+; Position HUD right above character head (center of screen, slightly above center)
+hudW := 140
+hudH := 72
+hudX := rX + (rW // 2) - (hudW // 2)
+hudY := rY + Round(rH * 0.38) - hudH
+
+; Rainbow color cycle
+FrozenRainbowHue := Mod(FrozenRainbowHue + 5, 360)
+rgbVal := HSVtoRGB(FrozenRainbowHue, 0.9, 1.0)
+GuiControl, FrozenHud:+c%rgbVal%, FrozenRainbowText
+
+; Show/move window smoothly
+DllCall("SetWindowPos", "Ptr", hFrozenHud, "Ptr", -1, "Int", hudX, "Int", hudY, "Int", hudW, "Int", hudH, "UInt", 0x0010 | 0x0040)
+FrozenHudVisible := true
+return
+
+HSVtoRGB(h, s, v) {
+	c := v * s
+	x := c * (1 - Abs(Mod(h / 60, 2) - 1))
+	m := v - c
+	if (h < 60)
+		r := c, g := x, b := 0
+	else if (h < 120)
+		r := x, g := c, b := 0
+	else if (h < 180)
+		r := 0, g := c, b := x
+	else if (h < 240)
+		r := 0, g := x, b := c
+	else if (h < 300)
+		r := x, g := 0, b := c
+	else
+		r := c, g := 0, b := x
+	red := Round((r + m) * 255)
+	green := Round((g + m) * 255)
+	blue := Round((b + m) * 255)
+	SetFormat, IntegerFast, hex
+	hexColor := (red << 16) | (green << 8) | blue
+	hexStr := SubStr(hexColor, 3)
+	while (StrLen(hexStr) < 6)
+		hexStr := "0" . hexStr
+	SetFormat, IntegerFast, d
+	return hexStr
+}
