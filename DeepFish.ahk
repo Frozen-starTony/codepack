@@ -94,6 +94,7 @@ ProfileFields.Push( ["General","AutoLowerGraphics","true","bool"]
                   , ["General","BagSlotKey","2","str"]
                   , ["General","UnstickAfter","2","num"]
                   , ["Stealth","Humanizer","true","bool"]
+                  , ["Stealth","StealthProfile","Moderator-Safe","stealthprofile"]
                   , ["Stealth","HumanJitter","25","num"]
                   , ["Stealth","AntiAFK","true","bool"]
                   , ["Stealth","AntiAFKInterval","10","num"]
@@ -930,15 +931,26 @@ else
 			tooltip, Bypass Count: %ClickShakeRepeatBypassCounter%/%RepeatBypassCounter%, %TooltipX%, %Tooltip12%, 12
 			ClickFailsafeCount := 0
 			ClickCount++
-			if (Humanizer)
+			if (Humanizer and StealthProfile != "Solo / Turbo")
 				{
-				Sleep, % HumanRand(18, 45)
-				OffJ := ShakeOffsetJitter ? ShakeOffsetJitter : 3
+				Sleep, % HumanRand(30, 65)
+				OffJ := ShakeOffsetJitter ? ShakeOffsetJitter : 4
 				TargetX := ClickX + HumanRand(-OffJ, OffJ)
 				TargetY := ClickY + HumanRand(-OffJ, OffJ)
 				mousemove, TargetX, TargetY, 0
 				send {lbutton down}
-				Sleep, % HumanRand(25, 55)
+				Sleep, % HumanRand(35, 70)
+				send {lbutton up}
+				}
+			else if (Humanizer)
+				{
+				Sleep, % HumanRand(12, 28)
+				OffJ := ShakeOffsetJitter ? ShakeOffsetJitter : 2
+				TargetX := ClickX + HumanRand(-OffJ, OffJ)
+				TargetY := ClickY + HumanRand(-OffJ, OffJ)
+				mousemove, TargetX, TargetY, 0
+				send {lbutton down}
+				Sleep, % HumanRand(20, 45)
 				send {lbutton up}
 				}
 			else
@@ -1781,14 +1793,31 @@ else if (FishX >= RunLeft and FishX <= (RunLeft + RunWidth))
 		WantDown := false
 	else
 		{
-		; Centering deadband: if bar is comfortably centered, don't flap the button
-		if (Abs(PosError) <= HalfW * 0.35 and Abs(RelVel) < 18)
+		; Centering sweet spot: maintain a smooth human hover rhythm instead of machine-gun clicks
+		if (Abs(PosError) <= HalfW * 0.45)
 			{
+			DllCall("QueryPerformanceCounter", "Int64*", ReelNow)
+			HoverElapsed := (ReelNow - (PrecisionDown ? PrecisionDownAt : PrecisionUpAt)) * 1000.0 / QpcFreq
+			HoverBias := (PosError / (HalfW * 0.45)) * 35.0
+			if (StealthProfile = "Solo / Turbo")
+				{
+				TargetHold := 75 - HoverBias + HumanRand(-10, 10)
+				TargetRel := 85 + HoverBias + HumanRand(-10, 10)
+				}
+			else
+				{
+				TargetHold := 155 - HoverBias + HumanRand(-18, 18)
+				TargetRel := 170 + HoverBias + HumanRand(-18, 18)
+				}
 			if (PrecisionDown)
 				{
-				DllCall("QueryPerformanceCounter", "Int64*", ReelNow)
-				if (((ReelNow - PrecisionDownAt) * 1000.0 / QpcFreq) > 50)
+				if (HoverElapsed >= TargetHold)
 					gosub, PrecisionRelease
+				}
+			else
+				{
+				if (HoverElapsed >= TargetRel)
+					gosub, PrecisionHold
 				}
 			goto BarMinigame2
 			}
@@ -1836,7 +1865,7 @@ goto BarMinigame2
 PrecisionHold:
 if (!PrecisionDown)
 	{
-	minRel := (Humanizer ? HumanRand(28, 48) : 15)
+	minRel := (StealthProfile = "Solo / Turbo" ? 35 : (Humanizer ? HumanRand(85, 135) : 35))
 	if (SpecialRod = "Requiem" and ReelMinRelease > 0)
 		minRel := ReelMinRelease
 	if (PrecisionUpAt)
@@ -1854,7 +1883,7 @@ return
 PrecisionRelease:
 if (PrecisionDown)
 	{
-	minHld := (Humanizer ? HumanRand(32, 55) : 15)
+	minHld := (StealthProfile = "Solo / Turbo" ? 40 : (Humanizer ? HumanRand(105, 155) : 40))
 	if (SpecialRod = "Requiem" and ReelMinHold > 0)
 		minHld := ReelMinHold
 	if (PrecisionDownAt)
@@ -2124,11 +2153,16 @@ for i, f in ProfileFields
 		{
 		if (val = "Pinion Aria")
 			val := "Pinions Aria"
-		if (val != "None" and val != "Pinions Aria" and val != "Requiem" and val != "Darkheart" and val != "Bellona's Waraxe" and val != "Dreambreaker" and val != "Tranquility" and val != "Noiseform" and val != "Verdant Oath" and val != "Ruinous Oath" and val != "Luminescent Oath" and val != "Lullaby")
+		if (val != "None" and val != "Pinions Aria" and val != "Requiem" and val != "Darkheart" and val != "Bellona's Waraxe" and val != "Dreambreaker" and val != "Tranquility" and val != "Noiseform" and val != "Verdant Oath" and val != "Ruinous Oath" and val != "Luminescent Oath" and val != "Lullaby" and val != "Tryhard" and val != "Polaris Serenade" and val != "Carbon" and val != "Astral Serenade")
 			{
 			ConfigWarnings .= key . "`n"
 			val := def
 			}
+		}
+	else if (type = "stealthprofile")
+		{
+		if (val != "Moderator-Safe" and val != "Solo / Turbo")
+			val := def
 		}
 	else if (type = "controlmode")
 		{
@@ -7800,7 +7834,19 @@ Y += RH
 hudChk := ShowDebugHud ? "Checked" : ""
 Gui, Add, CheckBox, x%CX% y%Y% w300 h20 c%ColorText% vShowDebugHud %hudChk% gToggleDebugHud HwndhC, Show in-game debug HUD bar
 GeneralCtrls.Push(hC)
-Gui, Font, s9 c%ColorMuted%, Segoe UI
+Y += RH + 4
+
+Gui, Add, Text, x%CX% y%Y% w%LW% h20 HwndhL, Stealth profile:
+GeneralCtrls.Push(hL)
+StealthProfChoice := (StealthProfile = "Solo / Turbo") ? 2 : 1
+Gui, Add, DropDownList, x%IX% y%Y% w%IW% h100 vStealthProfile gQueueAutoSave Choose%StealthProfChoice% HwndhC, Moderator-Safe|Solo / Turbo
+GeneralCtrls.Push(hC)
+ThemedCtrls.Push(hC)
+Gui, Font, s9 Bold c%ColorAccent%, Segoe UI
+Gui, Add, Text, x492 y%Y% w16 h20 Center +0x100 +0x200 HwndhQ, ?
+Gui, Font, s9 Norm c%ColorMuted%, Segoe UI
+GeneralCtrls.Push(hQ)
+IconTips[hQ] := "MODERATOR-SAFE: Human-like cadence (2.5-3.5 clicks/s), smooth natural holds and randomized delays. Invisible to spectating moderators and anticheat.`n`nSOLO / TURBO: Ultra-fast reaction for difficult fish when alone."
 Y += RH + 6
 
 GeneralBoolDefs := [ ["Anti-Ban Humanizer","Humanizer","HumanJitter"]
@@ -8210,8 +8256,8 @@ Y := ColorBlockEnd
 Gui, Add, Text, x%CX% y%Y% w%LW% h20 HwndhL, Special rod:
 MinigameCtrls.Push(hL)
 SpecialRowCtrls.Push(hL)
-SpecialRodChoice := (SpecialRod = "Pinions Aria") ? 2 : ((SpecialRod = "Requiem") ? 3 : ((SpecialRod = "Darkheart") ? 4 : ((SpecialRod = "Bellona's Waraxe") ? 5 : ((SpecialRod = "Dreambreaker") ? 6 : ((SpecialRod = "Tranquility") ? 7 : ((SpecialRod = "Noiseform") ? 8 : ((SpecialRod = "Verdant Oath") ? 9 : ((SpecialRod = "Ruinous Oath") ? 10 : ((SpecialRod = "Luminescent Oath") ? 11 : ((SpecialRod = "Lullaby") ? 12 : ((SpecialRod = "Tryhard") ? 13 : ((SpecialRod = "Polaris Serenade") ? 14 : ((SpecialRod = "Carbon") ? 15 : 1)))))))))))))
-Gui, Add, DropDownList, x%IX% y%Y% w150 h100 vSpecialRod gSpecialRodChanged Choose%SpecialRodChoice% HwndhC, None|Pinions Aria|Requiem|Darkheart|Bellona's Waraxe|Dreambreaker|Tranquility|Noiseform|Verdant Oath|Ruinous Oath|Luminescent Oath|Lullaby|Tryhard|Polaris Serenade|Carbon
+SpecialRodChoice := (SpecialRod = "Pinions Aria") ? 2 : ((SpecialRod = "Requiem") ? 3 : ((SpecialRod = "Darkheart") ? 4 : ((SpecialRod = "Bellona's Waraxe") ? 5 : ((SpecialRod = "Dreambreaker") ? 6 : ((SpecialRod = "Tranquility") ? 7 : ((SpecialRod = "Noiseform") ? 8 : ((SpecialRod = "Verdant Oath") ? 9 : ((SpecialRod = "Ruinous Oath") ? 10 : ((SpecialRod = "Luminescent Oath") ? 11 : ((SpecialRod = "Lullaby") ? 12 : ((SpecialRod = "Tryhard") ? 13 : ((SpecialRod = "Polaris Serenade") ? 14 : ((SpecialRod = "Carbon") ? 15 : ((SpecialRod = "Astral Serenade") ? 16 : 1))))))))))))))
+Gui, Add, DropDownList, x%IX% y%Y% w150 h100 vSpecialRod gSpecialRodChanged Choose%SpecialRodChoice% HwndhC, None|Pinions Aria|Requiem|Darkheart|Bellona's Waraxe|Dreambreaker|Tranquility|Noiseform|Verdant Oath|Ruinous Oath|Luminescent Oath|Lullaby|Tryhard|Polaris Serenade|Carbon|Astral Serenade
 MinigameCtrls.Push(hC)
 SpecialRowCtrls.Push(hC)
 ThemedCtrls.Push(hC)
@@ -9075,15 +9121,18 @@ ApplyTryhardPreset:
 ControlMode := "Lines"
 Kp := 0.65
 Kd := 0.38
-VelocitySmoothing := 0.15
-StoppingDistanceMultiplier := 1.8
-SideBarRatio := 0.6
+VelocitySmoothing := 0.18
+StoppingDistanceMultiplier := 1.9
+SideBarRatio := 0.55
 BarColorTolerance := 25
+FishBarColorTolerance := 18
 GuiControl, 1:, Kp, %Kp%
 GuiControl, 1:, Kd, %Kd%
 GuiControl, 1:, VelocitySmoothing, %VelocitySmoothing%
 GuiControl, 1:, StoppingDistanceMultiplier, %StoppingDistanceMultiplier%
 GuiControl, 1:, BarColorTolerance, %BarColorTolerance%
+GuiControl, 1:, FishBarColorTolerance, %FishBarColorTolerance%
+GuiControl, 1:, SideBarRatio, %SideBarRatio%
 return
 
 ApplyPolarisSerenadePreset:
@@ -9094,24 +9143,50 @@ Kp := 0.52
 Kd := 0.32
 VelocitySmoothing := 0.25
 StoppingDistanceMultiplier := 2.2
+SideBarRatio := 0.65
 GuiControl, 1:, Kp, %Kp%
 GuiControl, 1:, Kd, %Kd%
 GuiControl, 1:, VelocitySmoothing, %VelocitySmoothing%
 GuiControl, 1:, StoppingDistanceMultiplier, %StoppingDistanceMultiplier%
 GuiControl, 1:, BarColorTolerance, %BarColorTolerance%
 GuiControl, 1:, FishBarColorTolerance, %FishBarColorTolerance%
+GuiControl, 1:, SideBarRatio, %SideBarRatio%
 return
 
 ApplyCarbonPreset:
 ControlMode := "Lines"
 Kp := 0.50
 Kd := 0.30
-VelocitySmoothing := 0.28
-StoppingDistanceMultiplier := 2.5
+VelocitySmoothing := 0.26
+StoppingDistanceMultiplier := 2.4
+SideBarRatio := 0.70
+BarColorTolerance := 22
+FishBarColorTolerance := 16
 GuiControl, 1:, Kp, %Kp%
 GuiControl, 1:, Kd, %Kd%
 GuiControl, 1:, VelocitySmoothing, %VelocitySmoothing%
 GuiControl, 1:, StoppingDistanceMultiplier, %StoppingDistanceMultiplier%
+GuiControl, 1:, BarColorTolerance, %BarColorTolerance%
+GuiControl, 1:, FishBarColorTolerance, %FishBarColorTolerance%
+GuiControl, 1:, SideBarRatio, %SideBarRatio%
+return
+
+ApplyAstralSerenadePreset:
+ControlMode := "Lines"
+BarColorTolerance := 26
+FishBarColorTolerance := 20
+Kp := 0.55
+Kd := 0.35
+VelocitySmoothing := 0.22
+StoppingDistanceMultiplier := 2.0
+SideBarRatio := 0.65
+GuiControl, 1:, Kp, %Kp%
+GuiControl, 1:, Kd, %Kd%
+GuiControl, 1:, VelocitySmoothing, %VelocitySmoothing%
+GuiControl, 1:, StoppingDistanceMultiplier, %StoppingDistanceMultiplier%
+GuiControl, 1:, BarColorTolerance, %BarColorTolerance%
+GuiControl, 1:, FishBarColorTolerance, %FishBarColorTolerance%
+GuiControl, 1:, SideBarRatio, %SideBarRatio%
 return
 
 ApplyVerdantOathPreset:
@@ -9162,7 +9237,7 @@ SpecialRodChanged:
 GuiControlGet, SpecialRod, 1:, SpecialRod
 if (SpecialRod = "Requiem" or SpecialRod = "Darkheart" or SpecialRod = "Lullaby"
 	or SpecialRod = "Verdant Oath" or SpecialRod = "Ruinous Oath" or SpecialRod = "Luminescent Oath"
-	or SpecialRod = "Tryhard" or SpecialRod = "Polaris Serenade" or SpecialRod = "Carbon")
+	or SpecialRod = "Tryhard" or SpecialRod = "Polaris Serenade" or SpecialRod = "Carbon" or SpecialRod = "Astral Serenade")
 	ControlMode := "Lines"
 if (SpecialRod = "Noiseform")
 	gosub, ApplyNoiseformPreset
@@ -9174,6 +9249,8 @@ if (SpecialRod = "Polaris Serenade")
 	gosub, ApplyPolarisSerenadePreset
 if (SpecialRod = "Carbon")
 	gosub, ApplyCarbonPreset
+if (SpecialRod = "Astral Serenade")
+	gosub, ApplyAstralSerenadePreset
 gosub, RefreshControlModes
 TargetSection := "Minigame"
 gosub, ShowSection
@@ -9218,7 +9295,7 @@ for i, f in ProfileFields
 		chkval := val ? 1 : 0
 		GuiControl, 1:, %key%, %chkval%
 		}
-	else if (type = "shakemode" or type = "controlmode" or type = "castmode" or type = "specialrod")
+	else if (type = "shakemode" or type = "controlmode" or type = "castmode" or type = "specialrod" or type = "stealthprofile")
 		{
 		GuiControl, 1:ChooseString, %key%, %val%
 		}
