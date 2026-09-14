@@ -1,4 +1,4 @@
-;====================================================================================================;
+﻿;====================================================================================================;
 ;
 ;   DeepFish ALPHA
 ;   Copyright (c) 2026 Yato. All rights reserved.
@@ -7466,6 +7466,14 @@ WM_CTLCOLORBTN(wParam, lParam, msg, hwnd) {
 	return EnsureBrush(hBrushBG, ColorBG)
 }
 
+WM_LBUTTONDOWN(wParam, lParam, msg, hwnd) {
+	global GuiHwnd
+	WinGetClass, ctrlClass, ahk_id %hwnd%
+	if (ctrlClass = "Edit" || ctrlClass = "ComboBox" || ctrlClass = "Button" || ctrlClass = "msctls_hotkey32")
+		return
+	PostMessage, 0xA1, 2,,, ahk_id %GuiHwnd%
+}
+
 WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
 	global IconTips
 	static lastHwnd := 0
@@ -7553,6 +7561,7 @@ SpecialBrushes := {}
 OnMessage(0x133, "WM_CTLCOLOREDIT")
 OnMessage(0x135, "WM_CTLCOLORBTN")
 OnMessage(0x138, "WM_CTLCOLORSTATIC")
+OnMessage(0x201, "WM_LBUTTONDOWN")
 
 GeneralCtrls := []
 CastCtrls := []
@@ -9914,6 +9923,15 @@ Gui, FrozenHud:Show, NoActivate Hide x0 y0 w140 h72
 return
 
 UpdateFrozenHeadHud:
+if (!MacroRunning)
+{
+	if (FrozenHudVisible)
+	{
+		Gui, FrozenHud:Hide
+		FrozenHudVisible := false
+	}
+	return
+}
 WinGet, rHwnd, ID, ahk_exe RobloxPlayerBeta.exe
 if (!rHwnd)
 {
