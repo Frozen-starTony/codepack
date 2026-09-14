@@ -2052,6 +2052,9 @@ if (GuiKeepOpen != 1)
 IniRead, GuiAutoSave, %SettingsFile%, GUI, AutoSave, 0
 if (GuiAutoSave != 1)
 	GuiAutoSave := 0
+IniRead, ShowDebugHud, %SettingsFile%, GUI, ShowDebugHud, 0
+if (ShowDebugHud != 1)
+	ShowDebugHud := 0
 IniRead, WebhookURL, %SettingsFile%, Webhook, URL, %A_Space%
 if (WebhookURL = "ERROR")
 	WebhookURL := ""
@@ -2866,6 +2869,11 @@ return
 
 
 ShowHud:
+if (!ShowDebugHud)
+{
+	gosub, HideHud
+	return
+}
 if (!HudBuilt)
 	gosub, BuildHud
 WinGetPos, HudRX, HudRY, , , ahk_id %RobloxHwnd%
@@ -7774,6 +7782,11 @@ Y += RH
 
 keepChk := GuiKeepOpen ? "Checked" : ""
 Gui, Add, CheckBox, x%CX% y%Y% w300 h20 c%ColorText% vGuiKeepOpen %keepChk% gToggleKeepOpen HwndhC, Always open after pressing Start
+GeneralCtrls.Push(hC)
+Y += RH
+
+hudChk := ShowDebugHud ? "Checked" : ""
+Gui, Add, CheckBox, x%CX% y%Y% w300 h20 c%ColorText% vShowDebugHud %hudChk% gToggleDebugHud HwndhC, Show in-game debug HUD bar
 GeneralCtrls.Push(hC)
 Gui, Font, s9 c%ColorMuted%, Segoe UI
 Y += RH + 6
