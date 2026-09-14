@@ -1,4 +1,4 @@
-;====================================================================================================;
+﻿;====================================================================================================;
 ;
 ;   DeepFish ALPHA
 ;   Copyright (c) 2026 Yato. All rights reserved.
@@ -256,12 +256,12 @@ Hotkey, $F9, SnipStart, On
 Menu, Tray, NoStandard
 if FileExist(A_ScriptDir . "\app_icon.ico")
 	Menu, Tray, Icon, % A_ScriptDir . "\app_icon.ico"
-Menu, Tray, Tip, DeepFish [Frozen Edition]
-Menu, Tray, Add, ❄️ Show DeepFish, ShowGuiFromTray
+Menu, Tray, Tip, ReelPulse Macro
+Menu, Tray, Add, Show ReelPulse, ShowGuiFromTray
 Menu, Tray, Add
-Menu, Tray, Add, 🔄 Reload Macro, HotkeyReload
-Menu, Tray, Add, ❌ Exit, HotkeyExit
-Menu, Tray, Default, ❄️ Show DeepFish
+Menu, Tray, Add, Reload Macro, HotkeyReload
+Menu, Tray, Add, Exit, HotkeyExit
+Menu, Tray, Default, Show ReelPulse
 Menu, Tray, Click, 1
 
 gosub, BuildGui
@@ -350,7 +350,7 @@ Tooltip18 := (WindowHeight/2)+(20*8)
 Tooltip19 := (WindowHeight/2)+(20*9)
 Tooltip20 := (WindowHeight/2)+(20*10)
 
-tooltip, Created by Frozen, %TooltipX%, %Tooltip1%, 1
+tooltip, ReelPulse Running, %TooltipX%, %Tooltip1%, 1
 tooltip, Runtime: 0h 0m 0s, %TooltipX%, %Tooltip2%, 2
 
 gosub, RefreshHints
@@ -500,7 +500,7 @@ ToggleMacro:
 if (MacroRunning)
 	{
 	MacroRunning := false
-	GuiControl, 1:, StartStopDisplay, ▶ Start
+	GuiControl, 1:, StartStopDisplay, START
 	settimer, runtime, off
 				settimer, ClickShakeFailsafe, off
 	settimer, NavigationShakeFailsafe, off
@@ -517,7 +517,7 @@ MacroRunning := true
 LastAutoStop := 0
 WhStartTick := A_TickCount
 WhLastSummary := A_TickCount
-GuiControl, 1:, StartStopDisplay, ⏹ Stop
+GuiControl, 1:, StartStopDisplay, STOP
 goto StartMacroFlow
 
 PreviewOrToggle:
@@ -1909,7 +1909,7 @@ settimer, ClickShakeFailsafe, off
 settimer, NavigationShakeFailsafe, off
 settimer, BarCalculationFailsafe, off
 
-GuiControl, 1:, StartStopDisplay, ▶ Start
+GuiControl, 1:, StartStopDisplay, START
 
 send {lbutton up}
 send {rbutton up}
@@ -7606,12 +7606,12 @@ Gui, Margin, 0, 0
 Gui, Font, s12 Bold c%ColorText%, Segoe UI
 if FileExist(A_ScriptDir . "\gui_avatar.bmp")
 	Gui, Add, Picture, x14 y8 w48 h48, % A_ScriptDir . "\gui_avatar.bmp"
-Gui, Add, Text, x70 y12 w340 h22, ❄️ DeepFish [Frozen Edition]
-Gui, Font, s9 Norm c%ColorMuted%, Segoe UI
-Gui, Add, Text, x70 y36 w340 h16 HwndhSubtitle, Version 1.4.2 • Created by Frozen
-SpecialBrushes[hSubtitle] := {brush: hBrushBG, text: 0xFFFFFF}
+Gui, Add, Text, x70 y12 w340 h22, ReelPulse
+Gui, Font, s8 Norm c%ColorMuted%, Segoe UI
+Gui, Add, Text, x70 y36 w340 h16 HwndhSubtitle, v1.4.2  -  Original macro by Yato  |  Control by AsphaltCake
+SpecialBrushes[hSubtitle] := {brush: hBrushBG, text: 0x999999}
 
-StartStopLabel := MacroRunning ? "⏹ Stop" : "▶ Start"
+StartStopLabel := MacroRunning ? "STOP" : "START"
 Gui, Font, s10 Bold cFFFFFF, Segoe UI
 Gui, Add, Text, x430 y12 w94 h32 Center +0x100 +0x200 vStartStopDisplay gPreviewOrToggle HwndhStartStopBtnHwnd, %StartStopLabel%
 
@@ -7621,30 +7621,29 @@ SpecialBrushes[hDiv1] := {brush: hBrushBorder, text: ColorTextBGR}
 ;---- Profile bar ----
 
 Gui, Font, s9 c%ColorText%, Segoe UI
-Gui, Add, Text, x14 y74 w20 h22, 📁
-Gui, Add, DropDownList, x34 y72 w190 h200 vProfileSelect gProfileSelect HwndhProfileSelect
+Gui, Add, DropDownList, x14 y72 w170 h200 vProfileSelect gProfileSelect HwndhProfileSelect
 ThemedCtrls.Push(hProfileSelect)
 gosub, RefreshProfileList
 
 IconTips := {}
 
-Gui, Add, Text, x228 y74 w22 h22 Center +0x100 gProfileNew HwndhTipNew, ➕
+Gui, Add, Text, x190 y74 w22 h22 Center +0x100 +0x200 gProfileNew HwndhTipNew, [+]
 IconTips[hTipNew] := "New profile"
-Gui, Add, Text, x250 y74 w22 h22 Center +0x100 gProfileImport HwndhTipImport, 📥
+Gui, Add, Text, x216 y74 w22 h22 Center +0x100 +0x200 gProfileImport HwndhTipImport, ^
 IconTips[hTipImport] := "Import profile from file"
-Gui, Add, Text, x272 y74 w22 h22 Center +0x100 gProfileDuplicate HwndhTipDup, 📄
+Gui, Add, Text, x242 y74 w22 h22 Center +0x100 +0x200 gProfileDuplicate HwndhTipDup, =
 IconTips[hTipDup] := "Duplicate current profile"
-Gui, Add, Text, x294 y74 w22 h22 Center +0x100 gProfileDelete HwndhTipDel, 🗑
+Gui, Add, Text, x268 y74 w22 h22 Center +0x100 +0x200 gProfileDelete HwndhTipDel, X
 IconTips[hTipDel] := "Delete current profile"
-Gui, Add, Text, x316 y74 w22 h22 Center +0x100 gProfileExport HwndhTipExport, 📤
+Gui, Add, Text, x294 y74 w22 h22 Center +0x100 +0x200 gProfileExport HwndhTipExport, v
 IconTips[hTipExport] := "Export current profile to file"
-Gui, Add, Text, x344 y74 w24 h22 Center +0x100 +0x200 c%ColorAccent% gRevertSettings HwndhTipRevert, ↶
+Gui, Add, Text, x322 y74 w38 h22 Center +0x100 +0x200 c%ColorAccent% gRevertSettings HwndhTipRevert, Undo
 IconTips[hTipRevert] := "Undo the last save (restores the previous saved values)"
-Gui, Add, Text, x372 y74 w62 h22 Center +0x100 +0x200 c%ColorAccent% vSaveStatusText gSaveSettings HwndhTipSave, 💾 Save
+Gui, Add, Text, x364 y74 w44 h22 Center +0x100 +0x200 c%ColorAccent% vSaveStatusText gSaveSettings HwndhTipSave, Save
 IconTips[hTipSave] := "Save settings to current profile"
 autoChk := GuiAutoSave ? "Checked" : ""
 Gui, Font, s9 c%ColorText%, Segoe UI
-Gui, Add, CheckBox, x440 y75 w96 h20 c%ColorText% vGuiAutoSave %autoChk% gToggleAutoSave HwndhTipAuto, Auto-save
+Gui, Add, CheckBox, x418 y75 w114 h20 c%ColorText% vGuiAutoSave %autoChk% gToggleAutoSave HwndhTipAuto, Auto-save
 IconTips[hTipAuto] := "Save automatically whenever a setting changes"
 Gui, Font, s9 c%ColorText%, Segoe UI
 
@@ -7660,23 +7659,23 @@ Gui, Add, Text, x0 y108 w132 h458 HwndhSidebarBG
 SpecialBrushes[hSidebarBG] := {brush: hBrushPanel, text: ColorTextBGR}
 
 Gui, Font, s10 c%ColorText%, Segoe UI
-Gui, Add, Text, x10 y112 w112 h36 +0x100 vNavGeneral gSidebarClick HwndhNavGeneral, 🎣 General
+Gui, Add, Text, x10 y112 w112 h36 +0x100 +0x200 vNavGeneral gSidebarClick HwndhNavGeneral,   General
 SpecialBrushes[hNavGeneral] := {brush: hBrushPanel, text: ColorTextBGR}
-Gui, Add, Text, x10 y152 w112 h36 +0x100 vNavCast gSidebarClick HwndhNavCast, 🎯 Cast
+Gui, Add, Text, x10 y152 w112 h36 +0x100 +0x200 vNavCast gSidebarClick HwndhNavCast,   Cast
 SpecialBrushes[hNavCast] := {brush: hBrushPanel, text: ColorTextBGR}
-Gui, Add, Text, x10 y192 w112 h36 +0x100 vNavShake gSidebarClick HwndhNavShake, 🐚 Shake
+Gui, Add, Text, x10 y192 w112 h36 +0x100 +0x200 vNavShake gSidebarClick HwndhNavShake,   Shake
 SpecialBrushes[hNavShake] := {brush: hBrushPanel, text: ColorTextBGR}
-Gui, Add, Text, x10 y232 w112 h36 +0x100 vNavMinigame gSidebarClick HwndhNavMinigame, 🎮 Minigame
+Gui, Add, Text, x10 y232 w112 h36 +0x100 +0x200 vNavMinigame gSidebarClick HwndhNavMinigame,   Minigame
 SpecialBrushes[hNavMinigame] := {brush: hBrushPanel, text: ColorTextBGR}
-Gui, Add, Text, x10 y272 w112 h36 +0x100 vNavTuning gSidebarClick HwndhNavTuning, ⚙️ Tuning
+Gui, Add, Text, x10 y272 w112 h36 +0x100 +0x200 vNavTuning gSidebarClick HwndhNavTuning,   Tuning
 SpecialBrushes[hNavTuning] := {brush: hBrushPanel, text: ColorTextBGR}
-Gui, Add, Text, x10 y312 w112 h36 +0x100 vNavTotem gSidebarClick HwndhNavTotem, 🗿 Totem
+Gui, Add, Text, x10 y312 w112 h36 +0x100 +0x200 vNavTotem gSidebarClick HwndhNavTotem,   Totem
 SpecialBrushes[hNavTotem] := {brush: hBrushPanel, text: ColorTextBGR}
-Gui, Add, Text, x10 y352 w112 h36 +0x100 vNavWebhook gSidebarClick HwndhNavWebhook, 🔔 Webhook
+Gui, Add, Text, x10 y352 w112 h36 +0x100 +0x200 vNavWebhook gSidebarClick HwndhNavWebhook,   Webhook
 SpecialBrushes[hNavWebhook] := {brush: hBrushPanel, text: ColorTextBGR}
-Gui, Add, Text, x10 y392 w112 h36 +0x100 vNavFaq gSidebarClick HwndhNavFaq, ❓ FAQ
+Gui, Add, Text, x10 y392 w112 h36 +0x100 +0x200 vNavFaq gSidebarClick HwndhNavFaq,   FAQ
 SpecialBrushes[hNavFaq] := {brush: hBrushPanel, text: ColorTextBGR}
-Gui, Add, Text, x10 y432 w112 h36 +0x100 vNavAbout gSidebarClick HwndhNavAbout, ℹ️ About
+Gui, Add, Text, x10 y432 w112 h36 +0x100 +0x200 vNavAbout gSidebarClick HwndhNavAbout,   About
 SpecialBrushes[hNavAbout] := {brush: hBrushPanel, text: ColorTextBGR}
 
 gosub, BuildGeneralSection
@@ -7700,7 +7699,7 @@ if (GuiAlwaysOnTop)
 	Gui, +AlwaysOnTop
 
 gosub, RefreshControlModes
-Gui, Show, w%WINW% h%WINH%, DeepFish [Frozen Edition]
+Gui, Show, w%WINW% h%WINH%, ReelPulse
 
 hStartRgn := DllCall("CreateRoundRectRgn", "Int", 0, "Int", 0, "Int", 95, "Int", 33, "Int", 12, "Int", 12, "Ptr")
 DllCall("SetWindowRgn", "Ptr", hStartStopBtnHwnd, "Ptr", hStartRgn, "Int", true)
@@ -7757,8 +7756,8 @@ GeneralCtrls.Push(hC)
 Gui, Font, s9 c%ColorMuted%, Segoe UI
 Y += RH + 6
 
-GeneralBoolDefs := [ ["🛡️ Anti-Ban Humanizer","Humanizer","HumanJitter"]
-                   , ["🛡️ Anti-AFK Simulation","AntiAFK","AntiAFKInterval"]
+GeneralBoolDefs := [ ["Anti-Ban Humanizer","Humanizer","HumanJitter"]
+                   , ["Anti-AFK Simulation","AntiAFK","AntiAFKInterval"]
                    , ["Auto-lower graphics","AutoLowerGraphics","AutoGraphicsDelay"]
                    , ["Auto-zoom camera","AutoZoomInCamera","AutoZoomDelay"]
                    , ["Auto-enable camera mode","AutoEnableCameraMode","AutoCameraDelay"]
@@ -7934,7 +7933,7 @@ PerfectCastCtrls.Push(hCastWhiteSwatch)
 Y += RH + 4
 
 Gui, Font, s9 c%ColorAccent%, Segoe UI
-Gui, Add, Text, x%CX% y%Y% w360 h24 +0x100 +0x200 gSnipStart HwndhC, 📸 Snip screen and pick colors  (F9)
+Gui, Add, Text, x%CX% y%Y% w360 h24 +0x100 +0x200 gSnipStart HwndhC, Snip screen and pick colors  (F9)
 PerfectCastCtrls.Push(hC)
 SpecialBrushes[hC] := {brush: hBrushPanel, text: BGR(ColorAccent)}
 Gui, Font, s9 c%ColorMuted%, Segoe UI
@@ -8178,7 +8177,7 @@ IconTips[hQ] := "Extra behaviour for rods with their own`nmechanics.`n`nNONE - n
 Y += RH
 
 Gui, Font, s10 Bold c%ColorAccent%, Segoe UI
-Gui, Add, Text, x%CX% y%Y% w360 h24 +0x100 +0x200 gSnipStart HwndhC, 📸 Snip screen and pick colors  (F9)
+Gui, Add, Text, x%CX% y%Y% w360 h24 +0x100 +0x200 gSnipStart HwndhC, Snip screen and pick colors  (F9)
 MiniColorCtrls.Push(hC)
 Gui, Font, s9 Norm c%ColorMuted%, Segoe UI
 Y += 28
@@ -8231,7 +8230,7 @@ BuildTuningSection:
 Gui, Font, s9 c%ColorDark%, Segoe UI
 Y := ContentTop
 
-Gui, Add, Text, x%CX% y%Y% w368 h20 HwndhWarn, ⚠ Wrong values break tracking. Hover a ? to learn more.
+Gui, Add, Text, x%CX% y%Y% w368 h20 HwndhWarn, Warning: Wrong values break tracking. Hover a ? to learn more.
 TuningCtrls.Push(hWarn)
 SpecialBrushes[hWarn] := {brush: hBrushAmber, text: ColorDarkBGR}
 Y += 26
@@ -8685,7 +8684,7 @@ BuildFaqSection:
 
 Gui, Font, s12 Bold c%ColorAccent%, Segoe UI
 Y := ContentTop
-Gui, Add, Text, x%CX% y%Y% w372 h24 HwndhFaqHdr, ❓ Frequently Asked Questions
+Gui, Add, Text, x%CX% y%Y% w372 h24 HwndhFaqHdr, Frequently Asked Questions
 FaqCtrls.Push(hFaqHdr)
 Y += 28
 
@@ -8829,15 +8828,29 @@ Gui, Font, s9 c%ColorMuted%, Segoe UI
 Y := ContentTop
 
 Gui, Font, s12 Bold c%ColorAccent%, Segoe UI
-Gui, Add, Text, x%CX% y%Y% w372 h24 HwndhAbtHdr, ❄️ DeepFish [Frozen Edition]
+Gui, Add, Text, x%CX% y%Y% w372 h24 HwndhAbtHdr, ReelPulse Macro
 AboutCtrls.Push(hAbtHdr)
 Y += 26
 
 Gui, Font, s9 Norm cFFFFFF, Segoe UI
-Gui, Add, Text, x%CX% y%Y% w372 h18 HwndhAbtVer, Version 1.4.2 • Created by Frozen
+Gui, Add, Text, x%CX% y%Y% w372 h18 HwndhAbtVer, Version 1.4.2
 AboutCtrls.Push(hAbtVer)
 SpecialBrushes[hAbtVer] := {brush: hBrushBG, text: 0xFFFFFF}
 Y += 30
+
+Gui, Font, s9 Bold c%ColorText%, Segoe UI
+Gui, Add, Text, x%CX% y%Y% w372 h18 HwndhAbtCredHdr, Credits & Attribution
+AboutCtrls.Push(hAbtCredHdr)
+Y += 22
+
+Gui, Font, s9 Norm cFFFFFF, Segoe UI
+AboutCredits := "- Yato: Original creator of DeepFish macro core`n"
+AboutCredits .= "- AsphaltCake: Precision/Lines mode control method (IRUS)`n"
+AboutCredits .= "- Anti-Ban Humanizer & Anti-AFK engine integrated`n"
+Gui, Add, Text, x%CX% y%Y% w372 h56 cFFFFFF HwndhAbtCred, %AboutCredits%
+AboutCtrls.Push(hAbtCred)
+SpecialBrushes[hAbtCred] := {brush: hBrushBG, text: 0xFFFFFF}
+Y += 60
 
 Gui, Font, s9 Bold c%ColorText%, Segoe UI
 Gui, Add, Text, x%CX% y%Y% w372 h18 HwndhAbtLinkHdr, Links
@@ -8845,49 +8858,20 @@ AboutCtrls.Push(hAbtLinkHdr)
 Y += 22
 
 Gui, Font, s9 Norm cFFFFFF, Segoe UI
-Gui, Add, Text, x%CX% y%Y% w372 h20 +0x100 gOpenDiscord HwndhAbtDiscord, 💬  Discord  —  discord.gg/9dkmX6pAZd
+Gui, Add, Text, x%CX% y%Y% w372 h20 +0x100 gOpenDiscord HwndhAbtDiscord, Discord:  discord.gg/9dkmX6pAZd
 AboutCtrls.Push(hAbtDiscord)
 SpecialBrushes[hAbtDiscord] := {brush: hBrushBG, text: 0xFFFFFF}
 Y += 22
 
-Gui, Add, Text, x%CX% y%Y% w372 h20 +0x100 gOpenYouTube HwndhAbtYouTube, ▶  YouTube  —  youtube.com/@yatoark
+Gui, Add, Text, x%CX% y%Y% w372 h20 +0x100 gOpenYouTube HwndhAbtYouTube, YouTube:  youtube.com/@yatoark
 AboutCtrls.Push(hAbtYouTube)
 SpecialBrushes[hAbtYouTube] := {brush: hBrushBG, text: 0xFFFFFF}
 Y += 22
 
-Gui, Add, Text, x%CX% y%Y% w372 h20 +0x100 gOpenAsphalt HwndhAbtAsphalt, ▶  Original source  —  youtube.com/@AsphaltCake
+Gui, Add, Text, x%CX% y%Y% w372 h20 +0x100 gOpenAsphalt HwndhAbtAsphalt, AsphaltCake:  youtube.com/@AsphaltCake
 AboutCtrls.Push(hAbtAsphalt)
 SpecialBrushes[hAbtAsphalt] := {brush: hBrushBG, text: 0xFFFFFF}
 Y += 30
-
-Gui, Font, s9 Bold c%ColorText%, Segoe UI
-Gui, Add, Text, x%CX% y%Y% w372 h18 HwndhAbtCredHdr, Credits
-AboutCtrls.Push(hAbtCredHdr)
-Y += 22
-
-Gui, Font, s9 Norm cFFFFFF, Segoe UI
-AboutCredits := "• Frozen — Creator, design and development.`n"
-AboutCredits .= "• AsphaltCake — Precision/Lines mode control method,`n"
-AboutCredits .= "   adapted from IRUS IDIOTPROOF/IRUS COMET.`n"
-Gui, Add, Text, x%CX% y%Y% w372 h56 cFFFFFF HwndhAbtCred, %AboutCredits%
-AboutCtrls.Push(hAbtCred)
-SpecialBrushes[hAbtCred] := {brush: hBrushBG, text: 0xFFFFFF}
-Y += 60
-
-Gui, Font, s9 Bold c%ColorText%, Segoe UI
-Gui, Add, Text, x%CX% y%Y% w372 h18 HwndhAbtDonHdr, Donations
-AboutCtrls.Push(hAbtDonHdr)
-Y += 22
-
-Gui, Font, s9 Norm cFFFFFF, Segoe UI
-AboutDon := "Appreciated but never required. Message me directly`n"
-AboutDon .= "on Discord for details — please don't send a friend`n"
-AboutDon .= "request, I get far too many to keep up with.`n"
-AboutDon .= "Accepting PayPal and Discord Nitro."
-Gui, Add, Text, x%CX% y%Y% w372 h64 cFFFFFF HwndhAbtDon, %AboutDon%
-AboutCtrls.Push(hAbtDon)
-SpecialBrushes[hAbtDon] := {brush: hBrushBG, text: 0xFFFFFF}
-Y += 68
 
 Gui, Font, s9 Bold c%ColorText%, Segoe UI
 Gui, Add, Text, x%CX% y%Y% w372 h18 HwndhAbtLicHdr, Licence
@@ -8895,11 +8879,10 @@ AboutCtrls.Push(hAbtLicHdr)
 Y += 22
 
 Gui, Font, s9 Norm cFFFFFF, Segoe UI
-AboutLic := "© 2026 Yato. Personal use only. Do not redistribute,`n"
-AboutLic .= "republish a modified build, or sell this macro. Reusing`n"
-AboutLic .= "parts of it is fine as long as ""Yato"" is credited visibly`n"
-AboutLic .= "in your project's interface. Provided as is, with no`n"
-AboutLic .= "warranty — use at your own risk."
+AboutLic := "Copyright (c) 2026 Yato. All rights reserved.`n"
+AboutLic .= "Original macro logic created by Yato.`n"
+AboutLic .= "Reused with attribution as permitted by license.`n"
+AboutLic .= "Provided as-is with no warranty."
 Gui, Add, Text, x%CX% y%Y% w372 h84 cFFFFFF HwndhAbtLic, %AboutLic%
 AboutCtrls.Push(hAbtLic)
 SpecialBrushes[hAbtLic] := {brush: hBrushBG, text: 0xFFFFFF}
@@ -9005,15 +8988,15 @@ for i, h in NoteCtrls
 for i, h in SnipHelpCtrls
 	GuiControl, % ((OnMini and SpecialRod = "None") ? "Show" : "Hide"), %h%
 
-GuiControl, 1:, NavGeneral, % (TargetSection = "General" ? "▸ 🎣 General" : "   🎣 General")
-GuiControl, 1:, NavCast, % (TargetSection = "Cast" ? "▸ 🎯 Cast" : "   🎯 Cast")
-GuiControl, 1:, NavShake, % (TargetSection = "Shake" ? "▸ 🐚 Shake" : "   🐚 Shake")
-GuiControl, 1:, NavMinigame, % (TargetSection = "Minigame" ? "▸ 🎮 Minigame" : "   🎮 Minigame")
-GuiControl, 1:, NavTuning, % (TargetSection = "Tuning" ? "▸ ⚙️ Tuning" : "   ⚙️ Tuning")
-GuiControl, 1:, NavTotem, % (TargetSection = "Totem" ? "▸ 🗿 Totem" : "   🗿 Totem")
-GuiControl, 1:, NavWebhook, % (TargetSection = "Webhook" ? "▸ 🔔 Webhook" : "   🔔 Webhook")
-GuiControl, 1:, NavFaq, % (TargetSection = "Faq" ? "▸ ❓ FAQ" : "   ❓ FAQ")
-GuiControl, 1:, NavAbout, % (TargetSection = "About" ? "▸ ℹ️ About" : "   ℹ️ About")
+GuiControl, 1:, NavGeneral, % (TargetSection = "General" ? "> General" : "  General")
+GuiControl, 1:, NavCast, % (TargetSection = "Cast" ? "> Cast" : "  Cast")
+GuiControl, 1:, NavShake, % (TargetSection = "Shake" ? "> Shake" : "  Shake")
+GuiControl, 1:, NavMinigame, % (TargetSection = "Minigame" ? "> Minigame" : "  Minigame")
+GuiControl, 1:, NavTuning, % (TargetSection = "Tuning" ? "> Tuning" : "  Tuning")
+GuiControl, 1:, NavTotem, % (TargetSection = "Totem" ? "> Totem" : "  Totem")
+GuiControl, 1:, NavWebhook, % (TargetSection = "Webhook" ? "> Webhook" : "  Webhook")
+GuiControl, 1:, NavFaq, % (TargetSection = "Faq" ? "> FAQ" : "  FAQ")
+GuiControl, 1:, NavAbout, % (TargetSection = "About" ? "> About" : "  About")
 
 return
 
@@ -9229,12 +9212,12 @@ IniWrite, %StartStopKey%, %SettingsFile%, Hotkeys, StartStop
 IniWrite, %ReloadKey%, %SettingsFile%, Hotkeys, Reload
 IniWrite, %ExitKey%, %SettingsFile%, Hotkeys, Exit
 
-GuiControl, 1:, SaveStatusText, ✅ Saved
+GuiControl, 1:, SaveStatusText, Saved
 settimer, RestoreSaveButton, -1500
 return
 
 RestoreSaveButton:
-GuiControl, 1:, SaveStatusText, 💾 Save
+GuiControl, 1:, SaveStatusText, Save
 
 return
 
@@ -9876,7 +9859,7 @@ return
 RevertSettings:
 if !FileExist(ActiveProfileFile . ".bak")
 	{
-	GuiControl, 1:, SaveStatusText, ↶ none
+	GuiControl, 1:, SaveStatusText, None
 	settimer, RestoreSaveButton, -1500
 	return
 	}
@@ -9884,7 +9867,7 @@ FileCopy, %ActiveProfileFile%.bak, %ActiveProfileFile%, 1
 gosub, LoadActiveProfile
 gosub, RefreshGuiFields
 gosub, RefreshSwatches
-GuiControl, 1:, SaveStatusText, ↶ undone
+GuiControl, 1:, SaveStatusText, Undone
 settimer, RestoreSaveButton, -1500
 return
 
