@@ -1972,10 +1972,7 @@ return
 ;====================================================================================================;
 
 FirstRunGate:
-
-IniRead, FirstRunDone, %SettingsFile%, Meta, FirstRunDone, 0
-if (FirstRunDone = 1)
-	return
+return
 
 GateMsg := "IMPORTANT DISCLAIMER`n`n"
 GateMsg .= "This will Auto-Subscribe you to the channel.`n`n"
