@@ -9353,24 +9353,26 @@ for i, f in ProfileFields
 	}
 
 HotkeyState := HotkeysArmed ? "On" : "Off"
-if (StartStopKeyCtrl != StartStopKey)
+Hotkey, IfWinActive, ahk_exe RobloxPlayerBeta.exe
+if (StartStopKeyCtrl != "" and StartStopKeyCtrl != StartStopKey)
 	{
-	Hotkey, % "$" . StartStopKey, , Off
+	try Hotkey, % "$" . StartStopKey, Off
 	StartStopKey := StartStopKeyCtrl
-	Hotkey, % "$" . StartStopKey, HotkeyToggle, %HotkeyState%
+	try Hotkey, % "$" . StartStopKey, HotkeyToggle, %HotkeyState%
 	}
-if (ReloadKeyCtrl != ReloadKey)
+if (ReloadKeyCtrl != "" and ReloadKeyCtrl != ReloadKey)
 	{
-	Hotkey, % "$" . ReloadKey, , Off
+	try Hotkey, % "$" . ReloadKey, Off
 	ReloadKey := ReloadKeyCtrl
-	Hotkey, % "$" . ReloadKey, HotkeyReload, %HotkeyState%
+	try Hotkey, % "$" . ReloadKey, HotkeyReload, %HotkeyState%
 	}
-if (ExitKeyCtrl != ExitKey)
+if (ExitKeyCtrl != "" and ExitKeyCtrl != ExitKey)
 	{
-	Hotkey, % "$" . ExitKey, , Off
+	try Hotkey, % "$" . ExitKey, Off
 	ExitKey := ExitKeyCtrl
-	Hotkey, % "$" . ExitKey, HotkeyExit, %HotkeyState%
+	try Hotkey, % "$" . ExitKey, HotkeyExit, %HotkeyState%
 	}
+Hotkey, IfWinActive
 IniWrite, %WebhookURL%, %SettingsFile%, Webhook, URL
 WhVal := WebhookOn ? 1 : 0
 IniWrite, %WhVal%, %SettingsFile%, Webhook, Enabled
