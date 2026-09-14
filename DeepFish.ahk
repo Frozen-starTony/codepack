@@ -1,4 +1,4 @@
-﻿;====================================================================================================;
+;====================================================================================================;
 ;
 ;   DeepFish ALPHA
 ;   Copyright (c) 2026 Yato. All rights reserved.
@@ -253,9 +253,15 @@ Hotkey, % "$" . ExitKey, HotkeyExit, Off
 ForceReEquip := false
 Hotkey, $F9, SnipStart, On
 
+Menu, Tray, NoStandard
+if FileExist(A_ScriptDir . "\app_icon.ico")
+	Menu, Tray, Icon, % A_ScriptDir . "\app_icon.ico"
 Menu, Tray, Tip, DeepFish [Frozen Edition]
-Menu, Tray, Add, Show DeepFish [Frozen], ShowGuiFromTray
-Menu, Tray, Default, Show DeepFish [Frozen]
+Menu, Tray, Add, ❄️ Show DeepFish, ShowGuiFromTray
+Menu, Tray, Add
+Menu, Tray, Add, 🔄 Reload Macro, HotkeyReload
+Menu, Tray, Add, ❌ Exit, HotkeyExit
+Menu, Tray, Default, ❄️ Show DeepFish
 Menu, Tray, Click, 1
 
 gosub, BuildGui
