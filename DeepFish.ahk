@@ -1,4 +1,4 @@
-;====================================================================================================;
+﻿;====================================================================================================;
 ;
 ;   DeepFish ALPHA
 ;   Copyright (c) 2026 Yato. All rights reserved.
@@ -248,9 +248,11 @@ DutyAvg := 0.5
 DarkAcc := 0
 settimer, HotkeyWatch, 500
 
+Hotkey, IfWinActive, ahk_exe RobloxPlayerBeta.exe
 Hotkey, % "$" . StartStopKey, HotkeyToggle, Off
 Hotkey, % "$" . ReloadKey, HotkeyReload, Off
 Hotkey, % "$" . ExitKey, HotkeyExit, Off
+Hotkey, IfWinActive
 ForceReEquip := false
 Hotkey, $F9, SnipStart, On
 
@@ -261,7 +263,7 @@ Menu, Tray, Tip, ReelPulse Macro
 Menu, Tray, Add, Show ReelPulse, ShowGuiFromTray
 Menu, Tray, Add
 Menu, Tray, Add, Reload Macro, HotkeyReload
-Menu, Tray, Add, Exit, HotkeyExit
+Menu, Tray, Add, Exit, AppQuit
 Menu, Tray, Default, Show ReelPulse
 Menu, Tray, Click, 1
 
@@ -492,10 +494,8 @@ goto DoReload
 
 HotkeyExit:
 if (MacroRunning)
-	goto DoExit
-if WinActive("DeepFish ALPHA")
-	return
-goto DoExit
+	goto ToggleMacro
+return
 
 ToggleMacro:
 if (MacroRunning)
@@ -554,16 +554,18 @@ if (!GuiKeepOpen)
 return
 
 HotkeyWatch:
-if (!WinExist("DeepFish ALPHA"))
+if (GuiHwnd and !WinActive("ahk_id " . GuiHwnd))
 	gosub, ArmHotkeys
 return
 
 ArmHotkeys:
 if (!HotkeysArmed)
 	{
-	Hotkey, % "$" . StartStopKey, On
-	Hotkey, % "$" . ReloadKey, On
-	Hotkey, % "$" . ExitKey, On
+	Hotkey, IfWinActive, ahk_exe RobloxPlayerBeta.exe
+	Hotkey, % "$" . StartStopKey, HotkeyToggle, On
+	Hotkey, % "$" . ReloadKey, HotkeyReload, On
+	Hotkey, % "$" . ExitKey, HotkeyExit, On
+	Hotkey, IfWinActive
 	HotkeysArmed := true
 	}
 return
@@ -571,9 +573,11 @@ return
 DisarmHotkeys:
 if (HotkeysArmed)
 	{
+	Hotkey, IfWinActive, ahk_exe RobloxPlayerBeta.exe
 	Hotkey, % "$" . StartStopKey, Off
 	Hotkey, % "$" . ReloadKey, Off
 	Hotkey, % "$" . ExitKey, Off
+	Hotkey, IfWinActive
 	HotkeysArmed := false
 	}
 return
@@ -1382,12 +1386,12 @@ if (!FoundBar and !LineSeen)
 	{
 	NoiseFoundStreak := 0
 	MinigameLost++
-	if (MinigameLost = 1)
+	if (MinigameLost = 4)
 		{
 		send {lbutton up}
 		PrecisionDown := false
 		}
-	if (MinigameLost >= 8)
+	if (MinigameLost >= 28)
 		{
 		MgOverWhy := "barlost"
 		goto BarMinigameOver
@@ -1777,6 +1781,17 @@ else if (FishX >= RunLeft and FishX <= (RunLeft + RunWidth))
 		WantDown := false
 	else
 		{
+		; Centering deadband: if bar is comfortably centered, don't flap the button
+		if (Abs(PosError) <= HalfW * 0.35 and Abs(RelVel) < 18)
+			{
+			if (PrecisionDown)
+				{
+				DllCall("QueryPerformanceCounter", "Int64*", ReelNow)
+				if (((ReelNow - PrecisionDownAt) * 1000.0 / QpcFreq) > 50)
+					gosub, PrecisionRelease
+				}
+			goto BarMinigame2
+			}
 		CtrLook := (Kp > 0) ? (Kd / Kp) : 0.12
 		if (CtrLook < 0.02)
 			CtrLook := 0.02
@@ -1821,10 +1836,13 @@ goto BarMinigame2
 PrecisionHold:
 if (!PrecisionDown)
 	{
-	if (SpecialRod = "Requiem" and ReelMinRelease > 0 and PrecisionUpAt)
+	minRel := (Humanizer ? HumanRand(28, 48) : 15)
+	if (SpecialRod = "Requiem" and ReelMinRelease > 0)
+		minRel := ReelMinRelease
+	if (PrecisionUpAt)
 		{
 		DllCall("QueryPerformanceCounter", "Int64*", ReelNow)
-		if (((ReelNow - PrecisionUpAt) * 1000.0 / QpcFreq) < ReelMinRelease)
+		if (((ReelNow - PrecisionUpAt) * 1000.0 / QpcFreq) < minRel)
 			return
 		}
 	send {lbutton down}
@@ -1836,10 +1854,13 @@ return
 PrecisionRelease:
 if (PrecisionDown)
 	{
-	if (SpecialRod = "Requiem" and ReelMinHold > 0 and PrecisionDownAt)
+	minHld := (Humanizer ? HumanRand(32, 55) : 15)
+	if (SpecialRod = "Requiem" and ReelMinHold > 0)
+		minHld := ReelMinHold
+	if (PrecisionDownAt)
 		{
 		DllCall("QueryPerformanceCounter", "Int64*", ReelNow)
-		if (((ReelNow - PrecisionDownAt) * 1000.0 / QpcFreq) < ReelMinHold)
+		if (((ReelNow - PrecisionDownAt) * 1000.0 / QpcFreq) < minHld)
 			return
 		}
 	send {lbutton up}
@@ -1854,11 +1875,11 @@ if (SpecialRod = "Requiem")
 gosub, CaptureFishBar
 if (!BarPresent() and !FishLineVisible() and FindArrowX() < 0)
 	return
-loop, %StabilizerLoop%
-	{
-	send {lbutton down}
-	send {lbutton up}
-	}
+; Smooth humanized hover pulse instead of machinegun clicks
+send {lbutton down}
+HumanSleep(22, 5)
+send {lbutton up}
+HumanSleep(16, 4)
 return
 
 ;====================================================================================================;
@@ -3675,7 +3696,7 @@ ScanRowBar(y, minRun) {
 		if (lum > maxL)
 			maxL := lum
 		}
-	if (maxL - minL < 40)
+	if (maxL - minL < 22)
 		return false
 	thr := minL + (maxL - minL) * 0.55
 
@@ -5066,7 +5087,7 @@ LineScan() {
 			d := cur - prev
 			if (d < 0)
 				d := -d
-			if (d > 54)
+			if (d > 36)
 				hits[x] := hits[x] + 1
 			prev := cur
 			x++
@@ -6834,9 +6855,9 @@ BarPresent() {
 		if (RelLock = 1)
 			return ok
 		}
-	if (ScanRowBar(BarScanRow, 6))
+	if (ScanRowBar(BarScanRow, 14))
 		return true
-	return CalibrateBarRow(6)
+	return CalibrateBarRow(14)
 }
 
 FindArrowX() {
@@ -8164,8 +8185,8 @@ Y := ColorBlockEnd
 Gui, Add, Text, x%CX% y%Y% w%LW% h20 HwndhL, Special rod:
 MinigameCtrls.Push(hL)
 SpecialRowCtrls.Push(hL)
-SpecialRodChoice := (SpecialRod = "Pinions Aria") ? 2 : ((SpecialRod = "Requiem") ? 3 : ((SpecialRod = "Darkheart") ? 4 : ((SpecialRod = "Bellona's Waraxe") ? 5 : ((SpecialRod = "Dreambreaker") ? 6 : ((SpecialRod = "Tranquility") ? 7 : ((SpecialRod = "Noiseform") ? 8 : ((SpecialRod = "Verdant Oath") ? 9 : ((SpecialRod = "Ruinous Oath") ? 10 : ((SpecialRod = "Luminescent Oath") ? 11 : ((SpecialRod = "Lullaby") ? 12 : 1))))))))))
-Gui, Add, DropDownList, x%IX% y%Y% w150 h100 vSpecialRod gSpecialRodChanged Choose%SpecialRodChoice% HwndhC, None|Pinions Aria|Requiem|Darkheart|Bellona's Waraxe|Dreambreaker|Tranquility|Noiseform|Verdant Oath|Ruinous Oath|Luminescent Oath|Lullaby
+SpecialRodChoice := (SpecialRod = "Pinions Aria") ? 2 : ((SpecialRod = "Requiem") ? 3 : ((SpecialRod = "Darkheart") ? 4 : ((SpecialRod = "Bellona's Waraxe") ? 5 : ((SpecialRod = "Dreambreaker") ? 6 : ((SpecialRod = "Tranquility") ? 7 : ((SpecialRod = "Noiseform") ? 8 : ((SpecialRod = "Verdant Oath") ? 9 : ((SpecialRod = "Ruinous Oath") ? 10 : ((SpecialRod = "Luminescent Oath") ? 11 : ((SpecialRod = "Lullaby") ? 12 : ((SpecialRod = "Tryhard") ? 13 : ((SpecialRod = "Polaris Serenade") ? 14 : ((SpecialRod = "Carbon") ? 15 : 1)))))))))))))
+Gui, Add, DropDownList, x%IX% y%Y% w150 h100 vSpecialRod gSpecialRodChanged Choose%SpecialRodChoice% HwndhC, None|Pinions Aria|Requiem|Darkheart|Bellona's Waraxe|Dreambreaker|Tranquility|Noiseform|Verdant Oath|Ruinous Oath|Luminescent Oath|Lullaby|Tryhard|Polaris Serenade|Carbon
 MinigameCtrls.Push(hC)
 SpecialRowCtrls.Push(hC)
 ThemedCtrls.Push(hC)
@@ -9025,6 +9046,49 @@ return
 
 ;====================================================================================================;
 
+ApplyTryhardPreset:
+ControlMode := "Lines"
+Kp := 0.65
+Kd := 0.38
+VelocitySmoothing := 0.15
+StoppingDistanceMultiplier := 1.8
+SideBarRatio := 0.6
+BarColorTolerance := 25
+GuiControl, 1:, Kp, %Kp%
+GuiControl, 1:, Kd, %Kd%
+GuiControl, 1:, VelocitySmoothing, %VelocitySmoothing%
+GuiControl, 1:, StoppingDistanceMultiplier, %StoppingDistanceMultiplier%
+GuiControl, 1:, BarColorTolerance, %BarColorTolerance%
+return
+
+ApplyPolarisSerenadePreset:
+ControlMode := "Lines"
+BarColorTolerance := 25
+FishBarColorTolerance := 20
+Kp := 0.52
+Kd := 0.32
+VelocitySmoothing := 0.25
+StoppingDistanceMultiplier := 2.2
+GuiControl, 1:, Kp, %Kp%
+GuiControl, 1:, Kd, %Kd%
+GuiControl, 1:, VelocitySmoothing, %VelocitySmoothing%
+GuiControl, 1:, StoppingDistanceMultiplier, %StoppingDistanceMultiplier%
+GuiControl, 1:, BarColorTolerance, %BarColorTolerance%
+GuiControl, 1:, FishBarColorTolerance, %FishBarColorTolerance%
+return
+
+ApplyCarbonPreset:
+ControlMode := "Lines"
+Kp := 0.50
+Kd := 0.30
+VelocitySmoothing := 0.28
+StoppingDistanceMultiplier := 2.5
+GuiControl, 1:, Kp, %Kp%
+GuiControl, 1:, Kd, %Kd%
+GuiControl, 1:, VelocitySmoothing, %VelocitySmoothing%
+GuiControl, 1:, StoppingDistanceMultiplier, %StoppingDistanceMultiplier%
+return
+
 ApplyVerdantOathPreset:
 FishColor := "0x434B5B"
 BarLeftColor := "0x67512C"
@@ -9072,12 +9136,19 @@ return
 SpecialRodChanged:
 GuiControlGet, SpecialRod, 1:, SpecialRod
 if (SpecialRod = "Requiem" or SpecialRod = "Darkheart" or SpecialRod = "Lullaby"
-	or SpecialRod = "Verdant Oath" or SpecialRod = "Ruinous Oath" or SpecialRod = "Luminescent Oath")
+	or SpecialRod = "Verdant Oath" or SpecialRod = "Ruinous Oath" or SpecialRod = "Luminescent Oath"
+	or SpecialRod = "Tryhard" or SpecialRod = "Polaris Serenade" or SpecialRod = "Carbon")
 	ControlMode := "Lines"
 if (SpecialRod = "Noiseform")
 	gosub, ApplyNoiseformPreset
 if (SpecialRod = "Verdant Oath")
 	gosub, ApplyVerdantOathPreset
+if (SpecialRod = "Tryhard")
+	gosub, ApplyTryhardPreset
+if (SpecialRod = "Polaris Serenade")
+	gosub, ApplyPolarisSerenadePreset
+if (SpecialRod = "Carbon")
+	gosub, ApplyCarbonPreset
 gosub, RefreshControlModes
 TargetSection := "Minigame"
 gosub, ShowSection
@@ -9878,13 +9949,17 @@ Gui, Show
 return
 
 GuiClose:
-gosub, DoExit
+Gui, Hide
+gosub, ArmHotkeys
 return
 
 GuiEscape:
 Gui, Hide
 gosub, ArmHotkeys
 return
+
+AppQuit:
+ExitApp
 
 ;====================================================================================================;
 ; FROZEN BETA HEAD HUD & RAINBOW TEXT OVERLAY
