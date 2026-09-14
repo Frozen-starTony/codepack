@@ -1,4 +1,4 @@
-﻿;====================================================================================================;
+;====================================================================================================;
 ;
 ;   DeepFish ALPHA
 ;   Copyright (c) 2026 Yato. All rights reserved.
@@ -9944,6 +9944,13 @@ return
 ToggleKeepOpen:
 GuiControlGet, GuiKeepOpen,, GuiKeepOpen
 IniWrite, %GuiKeepOpen%, %SettingsFile%, GUI, KeepOpen
+return
+
+ToggleDebugHud:
+GuiControlGet, ShowDebugHud, 1:, ShowDebugHud
+IniWrite, %ShowDebugHud%, %SettingsFile%, GUI, ShowDebugHud
+if (!ShowDebugHud)
+	gosub, HideHud
 return
 
 ToggleAutoSave:
