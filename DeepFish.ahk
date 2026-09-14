@@ -247,7 +247,6 @@ DutyAvg := 0.5
 DarkAcc := 0
 settimer, HotkeyWatch, 500
 gosub, InitFrozenHeadHud
-settimer, UpdateFrozenHeadHud, 40
 
 Hotkey, % "$" . StartStopKey, HotkeyToggle, Off
 Hotkey, % "$" . ReloadKey, HotkeyReload, Off
@@ -498,6 +497,9 @@ if (MacroRunning)
 	MacroRunning := false
 	GuiControl, 1:, StartStopDisplay, ▶ Start
 	settimer, runtime, off
+	settimer, UpdateFrozenHeadHud, off
+	Gui, FrozenHud:Hide
+	FrozenHudVisible := false
 	settimer, ClickShakeFailsafe, off
 	settimer, NavigationShakeFailsafe, off
 	settimer, BarCalculationFailsafe, off
@@ -616,6 +618,7 @@ WinMaximize, ahk_id %RobloxHwnd%
 
 gosub, Calculations
 settimer, runtime, 1000
+settimer, UpdateFrozenHeadHud, 40
 
 gosub, RefreshHints
 
@@ -1900,6 +1903,12 @@ if (WhStartTick)
 	WhEvent("stop")
 WhStartTick := 0
 settimer, runtime, off
+settimer, UpdateFrozenHeadHud, off
+if (FrozenHudVisible)
+{
+	Gui, FrozenHud:Hide
+	FrozenHudVisible := false
+}
 settimer, ClickShakeFailsafe, off
 settimer, NavigationShakeFailsafe, off
 settimer, BarCalculationFailsafe, off
@@ -9929,7 +9938,24 @@ if (!MacroRunning)
 	}
 	return
 }
+
 WinGet, rHwnd, ID, ahk_exe RobloxPlayerBeta.exe
+if (!rHwnd)
+{
+	SetTitleMatchMode, 3
+	WinGet, rHwnd, ID, Roblox
+	SetTitleMatchMode, 2
+}
+
+if (!rHwnd || !WinActive("ahk_id " . rHwnd))
+{
+	if (FrozenHudVisible)
+	{
+		Gui, FrozenHud:Hide
+		FrozenHudVisible := false
+	}
+	return
+}
 if (!rHwnd)
 {
 	SetTitleMatchMode, 3
