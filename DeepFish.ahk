@@ -49,6 +49,24 @@ DllCall("QueryPerformanceFrequency", "Int64*", QpcFreq)
 if (!QpcFreq)
 	QpcFreq := 10000000
 
+; --- HUMANIZER & STEALTH ANTI-BAN ENGINE ---
+HumanRand(minVal, maxVal) {
+	if (minVal >= maxVal)
+		return minVal
+	Random, rVal, minVal, maxVal
+	return rVal
+}
+
+HumanSleep(baseMs, jitterMs := 15) {
+	if (baseMs <= 0)
+		return
+	minMs := (baseMs - jitterMs > 5) ? (baseMs - jitterMs) : 5
+	maxMs := baseMs + jitterMs
+	Random, rMs, minMs, maxMs
+	Sleep, %rMs%
+}
+
+
 ;     CONFIGURATION (Profiles)     ====================================================================================================;
 
 ProfilesDir := A_ScriptDir . "\Profiles"
@@ -73,7 +91,12 @@ ProfileFields.Push( ["General","AutoLowerGraphics","true","bool"]
                   , ["General","NavigationKey","\","str"]
                   , ["General","RodSlotKey","1","str"]
                   , ["General","BagSlotKey","2","str"]
-                  , ["General","UnstickAfter","2","num"] )
+                  , ["General","UnstickAfter","2","num"]
+                  , ["Stealth","Humanizer","true","bool"]
+                  , ["Stealth","HumanJitter","25","num"]
+                  , ["Stealth","AntiAFK","true","bool"]
+                  , ["Stealth","AntiAFKInterval","10","num"]
+                  , ["Stealth","ShakeOffsetJitter","3","num"] )
 ProfileFields.Push( ["Cast","CastMode","Normal","castmode"]
                   , ["Cast","PerfectGreenColor","0x60AA4A","str"]
                   , ["Cast","PerfectWhiteColor","0xFFFEF3","str"]
@@ -158,6 +181,8 @@ gosub, FirstRunGate
 
 MacroRunning := false
 MacroPaused := false
+AntiAFKCounter := 0
+AntiAFKNextTrigger := 10
 HudZoneShown := false
 NoteNextX := -1
 NoteNextY := -1
@@ -747,6 +772,26 @@ if (RodSlotKey != "" and (ForceReEquip or (UnstickAfter > 0 and CastFailCount >=
 		goto Idle
 	}
 
+; --- Anti-AFK & Human Presence Simulation ---
+if (AntiAFK)
+	{
+	AntiAFKCounter++
+	if (AntiAFKNextTrigger <= 0)
+		AntiAFKNextTrigger := HumanRand(8, 14)
+	if (AntiAFKCounter >= AntiAFKNextTrigger)
+		{
+		tooltip, Current Task: Anti-AFK Simulation, %TooltipX%, %Tooltip7%, 7
+		DllCall("mouse_event", "UInt", 0x01, "UInt", HumanRand(-2, 2), "UInt", HumanRand(-2, 2))
+		Sleep, % HumanRand(60, 120)
+		send {Space down}
+		Sleep, % HumanRand(35, 75)
+		send {Space up}
+		Sleep, % HumanRand(80, 150)
+		AntiAFKCounter := 0
+		AntiAFKNextTrigger := HumanRand(8, 14)
+		}
+	}
+
 gosub, TotemMaybeRun
 if (!MacroRunning)
 	goto Idle
@@ -759,15 +804,25 @@ if (CastMode = "Perfect")
 	}
 else
 	{
+	if (Humanizer)
+		ActualCastDuration := HoldRodCastDuration + HumanRand(-40, 50)
+	else
+		ActualCastDuration := HoldRodCastDuration
 	send {lbutton down}
-	tooltip, Action: Casting For %HoldRodCastDuration%ms, %TooltipX%, %Tooltip8%, 8
-	sleep %HoldRodCastDuration%
+	tooltip, Action: Casting For %ActualCastDuration%ms, %TooltipX%, %Tooltip8%, 8
+	sleep %ActualCastDuration%
 	send {lbutton up}
 	}
 if (!MacroRunning)
 	goto Idle
-tooltip, Action: Waiting For Bobber (%WaitForBobberDelay%ms), %TooltipX%, %Tooltip8%, 8
-sleep %WaitForBobberDelay%
+
+if (Humanizer)
+	ActualBobberDelay := WaitForBobberDelay + HumanRand(-50, 70)
+else
+	ActualBobberDelay := WaitForBobberDelay
+
+tooltip, Action: Waiting For Bobber (%ActualBobberDelay%ms), %TooltipX%, %Tooltip8%, 8
+sleep %ActualBobberDelay%
 if (!MacroRunning)
 	goto Idle
 
@@ -822,7 +877,10 @@ if (ForceReset == true)
 	tooltip, , , , 14
 	goto RestartMacro
 	}
-sleep %ClickScanDelay%
+if (Humanizer)
+	HumanSleep(ClickScanDelay, 15)
+else
+	sleep %ClickScanDelay%
 gosub, CaptureFishBar
 if (SpecialRod = "Tranquility")
 	{
@@ -863,7 +921,21 @@ else
 			tooltip, Bypass Count: %ClickShakeRepeatBypassCounter%/%RepeatBypassCounter%, %TooltipX%, %Tooltip12%, 12
 			ClickFailsafeCount := 0
 			ClickCount++
-			click, %ClickX%, %ClickY%
+			if (Humanizer)
+				{
+				Sleep, % HumanRand(18, 45)
+				OffJ := ShakeOffsetJitter ? ShakeOffsetJitter : 3
+				TargetX := ClickX + HumanRand(-OffJ, OffJ)
+				TargetY := ClickY + HumanRand(-OffJ, OffJ)
+				mousemove, TargetX, TargetY, 0
+				send {lbutton down}
+				Sleep, % HumanRand(25, 55)
+				send {lbutton up}
+				}
+			else
+				{
+				click, %ClickX%, %ClickY%
+				}
 			tooltip, Click Count: %ClickCount%, %TooltipX%, %Tooltip11%, 11
 			MemoryX := ClickX
 			MemoryY := ClickY
@@ -920,7 +992,10 @@ if (ForceReset == true)
 	tooltip, , , , 10
 	goto RestartMacro
 	}
-sleep %NavigationSpamDelay%
+if (Humanizer)
+	HumanSleep(NavigationSpamDelay + 15, 10)
+else
+	sleep %NavigationSpamDelay%
 gosub, CaptureFishBar
 if (SpecialRod = "Tranquility")
 	{
@@ -948,7 +1023,10 @@ else
 	{
 	NavigationCounter++
 	tooltip, Attempt Count: %NavigationCounter%, %TooltipX%, %Tooltip8%, 8
-	sleep 1
+	if (Humanizer)
+		Sleep, % HumanRand(12, 28)
+	else
+		sleep 1
 	send {enter}
 	goto NavigationShakeModeRedo
 	}
@@ -7668,7 +7746,9 @@ GeneralCtrls.Push(hC)
 Gui, Font, s9 c%ColorMuted%, Segoe UI
 Y += RH + 6
 
-GeneralBoolDefs := [ ["Auto-lower graphics","AutoLowerGraphics","AutoGraphicsDelay"]
+GeneralBoolDefs := [ ["🛡️ Anti-Ban Humanizer","Humanizer","HumanJitter"]
+                   , ["🛡️ Anti-AFK Simulation","AntiAFK","AntiAFKInterval"]
+                   , ["Auto-lower graphics","AutoLowerGraphics","AutoGraphicsDelay"]
                    , ["Auto-zoom camera","AutoZoomInCamera","AutoZoomDelay"]
                    , ["Auto-enable camera mode","AutoEnableCameraMode","AutoCameraDelay"]
                    , ["Auto-look down","AutoLookDownCamera","AutoLookDelay"]
@@ -9906,4 +9986,4 @@ HSVtoRGB(h, s, v) {
 		hexStr := "0" . hexStr
 	SetFormat, IntegerFast, d
 	return hexStr
-}
+}
