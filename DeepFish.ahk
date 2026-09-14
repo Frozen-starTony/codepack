@@ -2052,7 +2052,7 @@ if (GuiKeepOpen != 1)
 IniRead, GuiAutoSave, %SettingsFile%, GUI, AutoSave, 0
 if (GuiAutoSave != 1)
 	GuiAutoSave := 0
-IniRead, ShowDebugHud, %SettingsFile%, GUI, ShowDebugHud, 0
+IniRead, ShowDebugHud, %SettingsFile%, GUI, ShowDebugHud, 1
 if (ShowDebugHud != 1)
 	ShowDebugHud := 0
 IniRead, WebhookURL, %SettingsFile%, Webhook, URL, %A_Space%
@@ -2839,17 +2839,25 @@ if (HudBuilt)
 Gui, Hud:New, +AlwaysOnTop -Caption +ToolWindow +E0x20 +HwndhHudGui
 Gui, Hud:Color, 010101
 Gui, Hud:Margin, 0, 0
-Gui, Hud:Add, Progress, x0 y0 w3 h26 vHudZoneL BackgroundF59E0B, 0
-Gui, Hud:Add, Progress, x0 y0 w3 h26 vHudZoneR BackgroundF59E0B, 0
-Gui, Hud:Add, Progress, x0 y2 w5 h22 vHudBarC HwndhHudBarCH Background3B82F6, 0
-Gui, Hud:Add, Progress, x0 y7 w11 h11 vHudFish HwndhHudFishH Background22C55E, 0
-Gui, Hud:Add, Progress, x0 y4 w3 h18 vHudNote2 Background8C1856, 0
-Gui, Hud:Add, Progress, x0 y0 w5 h26 vHudNote BackgroundFF2D9B, 0
 HudW := Round(FishBarRight - FishBarLeft)
-HudH := 26
+if (HudW < 100)
+	HudW := 500
+HudH := 28
+
+HudSkinFile := A_ScriptDir . "\hud_skin.png"
+if FileExist(HudSkinFile)
+	Gui, Hud:Add, Picture, x0 y0 w%HudW% h%HudH% vHudSkinPic, %HudSkinFile%
+
+Gui, Hud:Add, Progress, x0 y0 w4 h%HudH% vHudZoneL BackgroundFFCC00, 0
+Gui, Hud:Add, Progress, x0 y0 w4 h%HudH% vHudZoneR BackgroundFFCC00, 0
+Gui, Hud:Add, Progress, x0 y1 w6 h26 vHudBarC HwndhHudBarCH Background00E5FF, 0
+Gui, Hud:Add, Progress, x0 y4 w12 h20 vHudFish HwndhHudFishH Background00FF66, 0
+Gui, Hud:Add, Progress, x0 y4 w4 h20 vHudNote2 BackgroundFF0055, 0
+Gui, Hud:Add, Progress, x0 y0 w6 h%HudH% vHudNote BackgroundFF00AA, 0
+
 Gui, Hud:Show, NoActivate Hide, DeepFishHud
-WinSet, TransColor, 010101, ahk_id %hHudGui%
 HudBuilt := true
+HudLastW := HudW
 HudLastZL := -999
 HudLastZR := -999
 HudLastBC := -999
@@ -2874,8 +2882,12 @@ if (!ShowDebugHud)
 	gosub, HideHud
 	return
 }
-if (!HudBuilt)
+CurBarW := Round(FishBarRight - FishBarLeft)
+if (!HudBuilt or (CurBarW > 100 and Abs(CurBarW - HudW) > 10))
+{
+	HudW := CurBarW
 	gosub, BuildHud
+}
 WinGetPos, HudRX, HudRY, , , ahk_id %RobloxHwnd%
 HudX := HudRX + Round(FishBarLeft)
 HudY := HudRY + Round(FishBarTooltipHeight) - 6
