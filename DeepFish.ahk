@@ -67,6 +67,19 @@ HumanSleep(baseMs, jitterMs := 15) {
 	Sleep, %rMs%
 }
 
+FishSoundPath := A_ScriptDir . "\fish_catch.mp3"
+
+PlayFishSound() {
+	global FishSoundPath
+	if (!FileExist(FishSoundPath))
+		return
+	DllCall("winmm\mciSendString", "Str", "close fishCatchAudio", "Str", "", "Int", 0, "Ptr", 0)
+	DllCall("winmm\mciSendString", "Str", "open \"" . FishSoundPath . "\" type mpegvideo alias fishCatchAudio", "Str", "", "Int", 0, "Ptr", 0)
+	DllCall("winmm\mciSendString", "Str", "setaudio fishCatchAudio volume to 400", "Str", "", "Int", 0, "Ptr", 0)
+	DllCall("winmm\mciSendString", "Str", "play fishCatchAudio from 0", "Str", "", "Int", 0, "Ptr", 0)
+}
+
+
 
 ;     CONFIGURATION (Profiles)     ====================================================================================================;
 
@@ -1163,6 +1176,8 @@ BarMinigameSingle:
 
 tooltip, Current Task: Playing Bar Minigame, %TooltipX%, %Tooltip7%, 7
 tooltip, Bar Size: %WhiteBarSize%, %TooltipX%, %Tooltip8%, 8
+
+PlayFishSound()
 
 
 
