@@ -7568,18 +7568,19 @@ WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
 }
 
 WM_MOUSEWHEEL(wParam, lParam, msg, hwnd) {
-	global hFaqBox
-	if (!hFaqBox)
-		return
-	MouseGetPos, , , , mwCtl, 2
-	if (mwCtl != hFaqBox)
-		return
-	mwD := (wParam >> 16) & 0xFFFF
-	if (mwD > 32767)
-		mwD -= 65536
-	mwLines := (mwD > 0) ? -3 : 3
-	SendMessage, 0xB6, 0, %mwLines%, , ahk_id %hFaqBox%
-	return 0
+	global hFaqBox, TargetSection
+	if (TargetSection = "Faq" and hFaqBox)
+	{
+		MouseGetPos, , , , mwCtl, 2
+		if (mwCtl != hFaqBox)
+			return
+		mwD := (wParam >> 16) & 0xFFFF
+		if (mwD > 32767)
+			mwD -= 65536
+		mwLines := (mwD > 0) ? -3 : 3
+		SendMessage, 0xB6, 0, %mwLines%, , ahk_id %hFaqBox%
+		return 0
+	}
 }
 
 WM_CTLCOLORSTATIC(wParam, lParam, msg, hwnd) {
@@ -7664,7 +7665,7 @@ SnipHelpCtrls := []
 ThemedCtrls := []
 
 WINW := 540
-WINH := 566
+WINH := 620
 CX := 148
 LW := 180
 IX := 336
@@ -7684,7 +7685,7 @@ if FileExist(A_ScriptDir . "\gui_avatar.bmp")
 	Gui, Add, Picture, x14 y8 w48 h48, % A_ScriptDir . "\gui_avatar.bmp"
 Gui, Add, Text, x70 y12 w340 h22, ReelPulse
 Gui, Font, s8 Norm c%ColorMuted%, Segoe UI
-Gui, Add, Text, x70 y36 w340 h16 HwndhSubtitle, v1.4.2  -  Original macro by Yato  |  Control by AsphaltCake
+Gui, Add, Text, x70 y36 w340 h16 HwndhSubtitle, v1.4.3  -  Original macro by Yato  |  Control by AsphaltCake
 SpecialBrushes[hSubtitle] := {brush: hBrushBG, text: 0x999999}
 
 StartStopLabel := MacroRunning ? "STOP" : "START"
@@ -7731,7 +7732,7 @@ SpecialBrushes[hDiv2] := {brush: hBrushBorder, text: ColorTextBGR}
 
 ;---- Sidebar ----
 
-Gui, Add, Text, x0 y108 w132 h458 HwndhSidebarBG
+Gui, Add, Text, x0 y108 w132 h512 HwndhSidebarBG
 SpecialBrushes[hSidebarBG] := {brush: hBrushPanel, text: ColorTextBGR}
 
 Gui, Font, s10 c%ColorText%, Segoe UI
@@ -7917,7 +7918,6 @@ for i, d in GeneralKeyDefs
 return
 
 ;====================================================================================================;
-
 BuildCastSection:
 
 Gui, Font, s9 c%ColorMuted%, Segoe UI
@@ -8926,7 +8926,7 @@ AboutCtrls.Push(hAbtHdr)
 Y += 26
 
 Gui, Font, s9 Norm cFFFFFF, Segoe UI
-Gui, Add, Text, x%CX% y%Y% w372 h18 HwndhAbtVer, Version 1.4.2
+Gui, Add, Text, x%CX% y%Y% w372 h18 HwndhAbtVer, Version 1.4.3
 AboutCtrls.Push(hAbtVer)
 SpecialBrushes[hAbtVer] := {brush: hBrushBG, text: 0xFFFFFF}
 Y += 30
