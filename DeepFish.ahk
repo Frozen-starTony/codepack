@@ -74,7 +74,7 @@ PlayFishSound() {
 	if (!FileExist(FishSoundPath))
 		return
 	DllCall("winmm\mciSendString", "Str", "close fishCatchAudio", "Str", "", "Int", 0, "Ptr", 0)
-	DllCall("winmm\mciSendString", "Str", "open \"" . FishSoundPath . "\" type mpegvideo alias fishCatchAudio", "Str", "", "Int", 0, "Ptr", 0)
+	DllCall("winmm\mciSendString", "Str", "open """ . FishSoundPath . """ type mpegvideo alias fishCatchAudio", "Str", "", "Int", 0, "Ptr", 0)
 	DllCall("winmm\mciSendString", "Str", "setaudio fishCatchAudio volume to 400", "Str", "", "Int", 0, "Ptr", 0)
 	DllCall("winmm\mciSendString", "Str", "play fishCatchAudio from 0", "Str", "", "Int", 0, "Ptr", 0)
 }
